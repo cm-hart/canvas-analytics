@@ -8,19 +8,43 @@ const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy - required for Render and other hosted platforms
+app.set('trust proxy', 1);
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+  credentials: true
+}));
 app.use(express.json());
-app.use(express.static('public'));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: { 
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
+
+// Serve login page (public - no auth required)
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Serve main page (requires auth)
+app.get('/', (req, res) => {
+  if (!req.session.authenticated) {
+    return res.redirect('/login.html');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve static files for authenticated users
+app.use(express.static('public'));
 
 // Login credentials from environment variables
 const MASTER_PASSWORD = process.env.MASTER_PASSWORD || 'changeThisPassword123';
