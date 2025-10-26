@@ -104,10 +104,10 @@
 
         .stats {
             padding: 30px;
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             background: #f8f9fa;
-            flex-wrap: wrap;
         }
 
         .stat-card {
@@ -115,8 +115,6 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            flex: 1;
-            min-width: 150px;
         }
 
         .stat-card h3 {
@@ -273,31 +271,31 @@
         }
 
         .badge {
-            padding: 6px 14px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
             display: inline-block;
         }
 
         .badge.missing {
-            background: #dc3545;
-            color: white;
+            background: #ffe5e5;
+            color: #dc3545;
         }
 
         .badge.late {
-            background: #ffc107;
-            color: #212529;
+            background: #fff3cd;
+            color: #856404;
         }
 
         .badge.incomplete {
-            background: #6c757d;
-            color: white;
+            background: #e9ecef;
+            color: #6c757d;
         }
 
         .badge.ontime {
-            background: #28a745;
-            color: white;
+            background: #d4edda;
+            color: #155724;
         }
 
         .expand-icon {
@@ -414,8 +412,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Canvas Student Analytics Dashboard</h1>
-            <p>Track missing, late, and incomplete assignments across all your students</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>📊 Canvas Student Analytics Dashboard</h1>
+                    <p>Track missing, late, and incomplete assignments across all your students</p>
+                </div>
+                <button id="logoutBtn" style="padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s;">
+                    Logout
+                </button>
+            </div>
         </div>
 
         <div class="controls">
@@ -459,6 +464,34 @@
     </div>
 
     <script>
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
+        });
+
+        // Check auth before doing anything
+        checkAuth();
+
         let studentsData = [];
         let currentSort = { column: 'name', direction: 'asc' };
 
@@ -620,7 +653,7 @@
             document.getElementById('totalIncomplete').textContent = totals.incomplete;
             document.getElementById('totalOnTime').textContent = totals.onTime;
             document.getElementById('totalStudents').textContent = students.length;
-            document.getElementById('statsContainer').style.display = 'flex';
+            document.getElementById('statsContainer').style.display = 'block';
 
             // Create table
             const tableHTML = `

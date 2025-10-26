@@ -1,160 +1,91 @@
-# Canvas Student Analytics Dashboard
+# Canvas Analytics Dashboard
 
-A web application for Canvas LMS instructors to quickly view missing, late, and on-time assignments for all students in their courses.
+A secure analytics dashboard for Canvas LMS that tracks student assignment completion.
 
 ## Features
 
-- 📊 View all students' analytics in one place (no clicking through individual pages!)
-- 🎯 See missing, late, and on-time assignment counts at a glance
-- 📈 Course-level statistics showing totals across all students
-- 🔄 Sortable columns to quickly identify students who need help
-- ⚡ Fast loading - fetches all data at once via Canvas API
+- 🔐 Secure login with @anniecannons.com email validation
+- 📊 View missing, late, and incomplete assignments across all students
+- 💬 View submission comments from Canvas
+- 📈 Summary statistics for the entire course
+- 🔍 Sortable student table
 
-## Prerequisites
+## Setup Instructions
 
-- Node.js (v14 or higher)
-- A Canvas LMS account with instructor access
-- Canvas API access token
-
-## Setup
-
-### 1. Get Your Canvas API Token
-
-1. Log into Canvas
-2. Click on **Account** → **Settings**
-3. Scroll down to **Approved Integrations**
-4. Click **+ New Access Token**
-5. Enter a purpose (e.g., "Analytics Dashboard")
-6. Click **Generate Token**
-7. **Copy the token** (you won't see it again!)
-
-### 2. Install Dependencies
+### 1. Install Dependencies
 
 ```bash
-cd canvas-analytics
 npm install
 ```
 
-### 3. Configure Environment Variables
+### 2. Configure Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your Canvas information:
+Edit `.env` and add your values:
 
 ```env
-CANVAS_BASE_URL=https://your-school.instructure.com
-CANVAS_API_TOKEN=your_api_token_here
+# Canvas API Configuration
+CANVAS_BASE_URL=https://your-canvas-instance.instructure.com
+CANVAS_API_TOKEN=your_canvas_api_token_here
+
+# Authentication
+MASTER_PASSWORD=YourSecurePasswordHere123!
+SESSION_SECRET=a-long-random-string-for-sessions
+
+# Server Configuration
 PORT=3000
+NODE_ENV=development
 ```
 
-**Important:** Replace `your-school.instructure.com` with your actual Canvas URL.
+**Important:**
+- `CANVAS_BASE_URL` - Your Canvas instance URL (no trailing slash)
+- `CANVAS_API_TOKEN` - Your Canvas API token (generate in Canvas under Account → Settings → New Access Token)
+- `MASTER_PASSWORD` - The password all users will use to login
+- `SESSION_SECRET` - A random string for securing sessions (at least 32 characters recommended)
 
-### 4. Run the Application
+### 3. Run the Server
 
-```bash
-npm start
-```
-
-Or for development with auto-restart:
-
+Development mode (with auto-restart):
 ```bash
 npm run dev
 ```
 
-The application will be available at: `http://localhost:3000`
+Production mode:
+```bash
+npm start
+```
 
-## Usage
+### 4. Access the Dashboard
 
-1. Open the application in your web browser
-2. Select a course from the dropdown
-3. Wait for the data to load (may take a few seconds for large courses)
-4. View the statistics and student table
-5. Click column headers to sort by that column
+Open your browser to: `http://localhost:3000`
 
-## How It Works
+## Login
 
-The application uses the Canvas API to:
+- **Email:** Any email ending in `@anniecannons.com`
+- **Password:** The `MASTER_PASSWORD` you set in your `.env` file
 
-1. Fetch all courses where you're listed as an instructor
-2. For each course, retrieve:
-   - All enrolled students
-   - All assignments with due dates
-   - Each student's submission status
-3. Calculate for each student:
-   - **Missing**: Assignments past due date with no submission
-   - **Late**: Assignments submitted after the due date
-   - **On Time**: Assignments submitted before the due date
-
-## Security Notes
-
-⚠️ **Important Security Information:**
-
-- Your API token is stored in the `.env` file and should **never** be committed to version control
-- The `.env` file is listed in `.gitignore` to prevent accidental commits
-- Keep your API token secure - it has the same access level as your Canvas account
-- Only share this application with trusted users
-- Consider using Canvas OAuth for production deployments with multiple users
+Examples:
+- `catie@anniecannons.com`
+- `instructor@anniecannons.com`
+- `admin@anniecannons.com`
 
 ## Deployment
 
-### Option 1: Deploy to Your Own Server
+When deploying to production (Render, Heroku, etc.):
 
-1. Copy all files to your server
-2. Set up environment variables on the server
-3. Install dependencies: `npm install`
-4. Run with a process manager like PM2:
-   ```bash
-   npm install -g pm2
-   pm2 start server.js --name canvas-analytics
-   ```
+1. Set all environment variables in your hosting platform
+2. Make sure to set `NODE_ENV=production`
+3. Use a strong, random `SESSION_SECRET`
+4. Use HTTPS (most platforms provide this automatically)
 
-### Option 2: Deploy to Heroku
+## Security Notes
 
-1. Create a Heroku account
-2. Install Heroku CLI
-3. Deploy:
-   ```bash
-   heroku create your-app-name
-   heroku config:set CANVAS_BASE_URL=your_url
-   heroku config:set CANVAS_API_TOKEN=your_token
-   git push heroku main
-   ```
-
-### Option 3: Deploy to Vercel/Railway/Render
-
-These platforms support Node.js apps. Follow their documentation and set environment variables in their dashboard.
-
-## Troubleshooting
-
-### "Failed to fetch courses"
-- Check that your Canvas URL is correct
-- Verify your API token is valid
-- Ensure you have instructor access to at least one course
-
-### "No students found"
-- Verify the course has active student enrollments
-- Check that you're an instructor in the course
-
-### Slow loading
-- Large courses with many students/assignments may take 10-30 seconds
-- This is normal - Canvas API requires multiple requests per student
-
-## API Rate Limits
-
-Canvas has API rate limits (typically 3000 requests per hour). For courses with many students:
-- ~50 students = ~150 API requests
-- ~100 students = ~300 API requests
-
-If you hit rate limits, wait an hour or contact Canvas support to increase your limits.
-
-## License
-
-MIT
-
-## Support
-
-For issues with Canvas API or access tokens, contact your Canvas administrator or Canvas support.
+- Sessions last for 24 hours
+- All API endpoints require authentication
+- Login attempts with invalid emails or passwords are rejected
+- In production, sessions use secure cookies (HTTPS only)

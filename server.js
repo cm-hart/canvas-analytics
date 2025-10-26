@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const path = require('path');
+const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,61 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Login credentials from environment variables
+const MASTER_PASSWORD = process.env.MASTER_PASSWORD || 'changeThisPassword123';
+
+// Middleware to check if user is authenticated
+function requireAuth(req, res, next) {
+  if (req.session && req.session.authenticated) {
+    return next();
+  }
+  res.status(401).json({ error: 'Not authenticated' });
+}
+
+// Login endpoint
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Check if email ends with @anniecannons.com
+  if (!email || !email.endsWith('@anniecannons.com')) {
+    return res.status(401).json({ error: 'Invalid email. Must be an @anniecannons.com email address.' });
+  }
+  
+  // Check password
+  if (password !== MASTER_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password.' });
+  }
+  
+  // Set session
+  req.session.authenticated = true;
+  req.session.email = email;
+  
+  res.json({ success: true, email });
+});
+
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ success: true });
+});
+
+// Check auth status
+app.get('/api/auth/status', (req, res) => {
+  res.json({ 
+    authenticated: !!req.session.authenticated,
+    email: req.session.email || null
+  });
+});
 
 // Canvas API configuration
 const CANVAS_BASE_URL = process.env.CANVAS_BASE_URL;
@@ -53,7 +109,7 @@ async function getAllPages(url, params = {}) {
 }
 
 // Get all courses for the instructor
-app.get('/api/courses', async (req, res) => {
+app.get('/api/courses', requireAuth, async (req, res) => {
   try {
     const courses = await getAllPages('/courses', {
       enrollment_type: 'teacher',
@@ -80,7 +136,7 @@ app.get('/api/courses', async (req, res) => {
 });
 
 // Get all students in a course with their analytics
-app.get('/api/courses/:courseId/analytics', async (req, res) => {
+app.get('/api/courses/:courseId/analytics', requireAuth, async (req, res) => {
   try {
     const { courseId } = req.params;
     
