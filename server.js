@@ -59,37 +59,62 @@ function requireAuth(req, res, next) {
 
 // Login endpoint
 app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  // Check if email ends with @anniecannons.com
-  if (!email || !email.endsWith('@anniecannons.com')) {
-    return res.status(401).json({ error: 'Invalid email. Must be an @anniecannons.com email address.' });
+  try {
+    const { email, password } = req.body;
+    
+    console.log('Login attempt:', { email: email || 'undefined', hasPassword: !!password });
+    
+    // Check if email ends with @anniecannons.com
+    if (!email || !email.endsWith('@anniecannons.com')) {
+      console.log('Invalid email domain');
+      return res.status(401).json({ error: 'Invalid email. Must be an @anniecannons.com email address.' });
+    }
+    
+    // Check password
+    if (password !== MASTER_PASSWORD) {
+      console.log('Invalid password');
+      return res.status(401).json({ error: 'Invalid password.' });
+    }
+    
+    // Set session
+    req.session.authenticated = true;
+    req.session.email = email;
+    
+    console.log('Login successful for:', email);
+    res.json({ success: true, email });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Server error during login' });
   }
-  
-  // Check password
-  if (password !== MASTER_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid password.' });
-  }
-  
-  // Set session
-  req.session.authenticated = true;
-  req.session.email = email;
-  
-  res.json({ success: true, email });
 });
 
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ success: true });
+  try {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ error: 'Failed to logout' });
+      }
+      res.json({ success: true });
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Server error during logout' });
+  }
 });
 
 // Check auth status
 app.get('/api/auth/status', (req, res) => {
-  res.json({ 
-    authenticated: !!req.session.authenticated,
-    email: req.session.email || null
-  });
+  try {
+    res.json({ 
+      authenticated: !!req.session.authenticated,
+      email: req.session.email || null
+    });
+  } catch (error) {
+    console.error('Auth status error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Canvas API configuration

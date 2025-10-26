@@ -467,7 +467,9 @@
         // Check authentication on page load
         async function checkAuth() {
             try {
-                const response = await fetch('/api/auth/status');
+                const response = await fetch('/api/auth/status', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
                 
                 if (!data.authenticated) {
@@ -482,7 +484,10 @@
         // Logout handler
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             try {
-                await fetch('/api/logout', { method: 'POST' });
+                await fetch('/api/logout', { 
+                    method: 'POST',
+                    credentials: 'include'
+                });
                 window.location.href = '/login.html';
             } catch (error) {
                 console.error('Logout failed:', error);
@@ -498,7 +503,9 @@
         // Load courses on page load
         async function loadCourses() {
             try {
-                const response = await fetch('/api/courses');
+                const response = await fetch('/api/courses', {
+                    credentials: 'include'
+                });
                 const courses = await response.json();
                 
                 const select = document.getElementById('courseSelect');
@@ -541,7 +548,9 @@
             document.getElementById('statsContainer').style.display = 'none';
 
             try {
-                const response = await fetch(`/api/courses/${courseId}/analytics`);
+                const response = await fetch(`/api/courses/${courseId}/analytics`, {
+                    credentials: 'include'
+                });
                 studentsData = await response.json();
                 
                 displayAnalytics(studentsData);
