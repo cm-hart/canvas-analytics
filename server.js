@@ -102,11 +102,12 @@ app.get('/api/courses/:courseId/analytics', async (req, res) => {
     const studentAnalytics = await Promise.all(
       students.map(async (student) => {
         try {
-          // Get all submissions for this student
+          // Get all submissions for this student - INCLUDE SUBMISSION_COMMENTS
           const submissions = await getAllPages(
             `/courses/${courseId}/students/submissions`,
             {
               student_ids: [student.id],
+              include: ['submission_comments'],
               per_page: 100
             }
           );
@@ -157,7 +158,10 @@ app.get('/api/courses/:courseId/analytics', async (req, res) => {
               incompleteList.push({
                 name: assignment.name,
                 dueDate: dueDate,
-                submittedAt: submission.submitted_at
+                submittedAt: submission.submitted_at,
+                comments: submission.submission_comments || [],
+                assignmentId: assignment.id,
+                submissionId: submission.id
               });
             }
             // Use Canvas's built-in flags, but also check for past due with no submission
@@ -165,21 +169,30 @@ app.get('/api/courses/:courseId/analytics', async (req, res) => {
               missing++;
               missingList.push({
                 name: assignment.name,
-                dueDate: dueDate
+                dueDate: dueDate,
+                comments: submission.submission_comments || [],
+                assignmentId: assignment.id,
+                submissionId: submission.id
               });
             } else if (submission.late) {
               late++;
               lateList.push({
                 name: assignment.name,
                 dueDate: dueDate,
-                submittedAt: submission.submitted_at
+                submittedAt: submission.submitted_at,
+                comments: submission.submission_comments || [],
+                assignmentId: assignment.id,
+                submissionId: submission.id
               });
             } else if (!submission.submitted_at && isPastDue && submission.workflow_state === 'unsubmitted') {
               // Past due, no submission, but Canvas didn't flag it as missing
               missing++;
               missingList.push({
                 name: assignment.name,
-                dueDate: dueDate
+                dueDate: dueDate,
+                comments: submission.submission_comments || [],
+                assignmentId: assignment.id,
+                submissionId: submission.id
               });
             } else if (submission.submitted_at && !submission.missing && !submission.late) {
               // Has a submission and it's not late or missing
