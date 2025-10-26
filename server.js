@@ -62,7 +62,7 @@ app.post('/api/login', (req, res) => {
   try {
     const { email, password } = req.body;
     
-    console.log('Login attempt:', { email: email || 'undefined', hasPassword: !!password });
+    // console.log('Login attempt:', { email: email || 'undefined', hasPassword: !!password });
     
     // Check if email ends with @anniecannons.com
     if (!email || !email.endsWith('@anniecannons.com')) {
@@ -80,7 +80,7 @@ app.post('/api/login', (req, res) => {
     req.session.authenticated = true;
     req.session.email = email;
     
-    console.log('Login successful for:', email);
+    // console.log('Login successful for:', email);
     res.json({ success: true, email });
   } catch (error) {
     console.error('Login error:', error);

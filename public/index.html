@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Student Analytics Dashboard</title>
     <style>
-        * {
+       * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -104,10 +104,10 @@
 
         .stats {
             padding: 30px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: flex;
             gap: 20px;
             background: #f8f9fa;
+            flex-wrap: wrap;
         }
 
         .stat-card {
@@ -115,6 +115,8 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 150px;
         }
 
         .stat-card h3 {
@@ -271,31 +273,31 @@
         }
 
         .badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
             display: inline-block;
         }
 
         .badge.missing {
-            background: #ffe5e5;
-            color: #dc3545;
+            background: #dc3545;
+            color: white;
         }
 
         .badge.late {
-            background: #fff3cd;
-            color: #856404;
+            background: #ffc107;
+            color: #212529;
         }
 
         .badge.incomplete {
-            background: #e9ecef;
-            color: #6c757d;
+            background: #6c757d;
+            color: white;
         }
 
         .badge.ontime {
-            background: #d4edda;
-            color: #155724;
+            background: #28a745;
+            color: white;
         }
 
         .expand-icon {
@@ -584,10 +586,10 @@
 
         // Generate comments HTML
         function generateCommentsHTML(assignment, uniqueId) {
-            console.log('Generating comments HTML for:', assignment.name, 'Comments:', assignment.comments);
+            // console.log('Generating comments HTML for:', assignment.name, 'Comments:', assignment.comments);
             
             if (!assignment.comments || assignment.comments.length === 0) {
-                console.log('No comments for this assignment');
+                // console.log('No comments for this assignment');
                 return `
                     <div class="comments-section" id="comments-${uniqueId}">
                         <div class="comments-header">💬 Submission Comments</div>
@@ -596,7 +598,7 @@
                 `;
             }
             
-            console.log(`Assignment has ${assignment.comments.length} comments`);
+            // console.log(`Assignment has ${assignment.comments.length} comments`);
 
             const commentsHTML = assignment.comments.map(comment => {
                 const isInstructor = comment.author_id !== comment.author?.id || comment.author_name?.includes('Instructor');
@@ -624,12 +626,12 @@
 
         // Toggle comments visibility
         function toggleComments(uniqueId) {
-            console.log('toggleComments called with ID:', uniqueId);
+            // console.log('toggleComments called with ID:', uniqueId);
             const commentsSection = document.getElementById(`comments-${uniqueId}`);
-            console.log('Found comments section:', commentsSection);
+            // console.log('Found comments section:', commentsSection);
             if (commentsSection) {
                 commentsSection.classList.toggle('show');
-                console.log('Toggled show class, now has show:', commentsSection.classList.contains('show'));
+                // console.log('Toggled show class, now has show:', commentsSection.classList.contains('show'));
             } else {
                 console.log('ERROR: Could not find comments section with ID:', `comments-${uniqueId}`);
             }
@@ -758,7 +760,7 @@
 
             document.getElementById('content').innerHTML = tableHTML;
 
-            console.log('Table HTML inserted');
+            // console.log('Table HTML inserted');
 
             // Add sorting functionality
             document.querySelectorAll('th[data-column]').forEach(th => {
@@ -779,7 +781,7 @@
                     
                     this.classList.toggle('expanded');
                     detailsRow.classList.toggle('show');
-                    console.log('Student row toggled, expanded:', this.classList.contains('expanded'));
+                    // console.log('Student row toggled, expanded:', this.classList.contains('expanded'));
                 });
             });
 
@@ -787,9 +789,9 @@
             document.getElementById('content').addEventListener('click', function(e) {
                 const assignmentLi = e.target.closest('.assignment-clickable');
                 if (assignmentLi) {
-                    console.log('Assignment clicked!');
+                    // console.log('Assignment clicked!');
                     const uniqueId = assignmentLi.getAttribute('data-assignment-id');
-                    console.log('Assignment ID:', uniqueId);
+                    // console.log('Assignment ID:', uniqueId);
                     toggleComments(uniqueId);
                 }
             });
@@ -834,9 +836,9 @@
 
         // Global click listener for debugging
         document.addEventListener('click', function(e) {
-            console.log('CLICK DETECTED:', e.target);
+            // console.log('CLICK DETECTED:', e.target);
             if (e.target.closest('.assignment-clickable')) {
-                console.log('>>> ASSIGNMENT CLICKED <<<');
+                // console.log('>>> ASSIGNMENT CLICKED <<<');
             }
         });
 
