@@ -1,673 +1,738 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canvas Student Analytics Dashboard</title>
     <style>
-       * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .controls {
-            padding: 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .control-group {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        label {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        select {
-            padding: 10px 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 14px;
-            background: white;
-            cursor: pointer;
-            min-width: 300px;
-            transition: border-color 0.2s;
-        }
-
-        select:hover {
-            border-color: #667eea;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: #6c757d;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .stats {
-            padding: 30px;
-            display: flex;
-            gap: 20px;
-            background: #f8f9fa;
-            flex-wrap: wrap;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .stat-card h3 {
-            font-size: 14px;
-            color: #6c757d;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-card .value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #212529;
-        }
-
-        .stat-card.missing .value {
-            color: #dc3545;
-        }
-
-        .stat-card.late .value {
-            color: #ffc107;
-        }
-
-        .stat-card.incomplete .value {
-            color: #6c757d;
-        }
-
-        .table-container {
-            padding: 30px;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-
-        th {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        th:hover {
-            background: #e9ecef;
-        }
-
-        th.sorted-asc::after {
-            content: " ▲";
-        }
-
-        th.sorted-desc::after {
-            content: " ▼";
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        tbody tr {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        tbody tr:hover {
-            background: #e3f2fd !important;
-        }
-
-        .student-row.expanded {
-            background: #f8f9fa;
-        }
-
-        .details-row {
-            display: none;
-            background: #f8f9fa;
-        }
-
-        .details-row.show {
-            display: table-row;
-        }
-
-        .details-cell {
-            padding: 20px 30px !important;
-            border-bottom: 2px solid #dee2e6 !important;
-        }
-
-        .details-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .detail-section {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #dee2e6;
-        }
-
-        .detail-section.missing {
-            border-left-color: #dc3545;
-        }
-
-        .detail-section.late {
-            border-left-color: #ffc107;
-        }
-
-        .detail-section.incomplete {
-            border-left-color: #6c757d;
-        }
-
-        .detail-section h4 {
-            margin-bottom: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-section ul {
-            list-style: none;
-        }
-
-        .detail-section li {
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .detail-section li:hover {
-            background: #e9ecef;
-        }
-
-        .assignment-name {
-            font-weight: 500;
-            margin-bottom: 4px;
-            color: #495057;
-        }
-
-        .assignment-date {
-            font-size: 12px;
-            color: #6c757d;
-        }
-
-        .badge {
-            padding: 6px 14px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 700;
-            display: inline-block;
-        }
-
-        .badge.missing {
-            background: #dc3545;
-            color: white;
-        }
-
-        .badge.late {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .badge.incomplete {
-            background: #6c757d;
-            color: white;
-        }
-
-        .badge.ontime {
-            background: #28a745;
-            color: white;
-        }
-
-        .expand-icon {
-            display: inline-block;
-            margin-right: 8px;
-            transition: transform 0.2s;
-            font-size: 10px;
-        }
-
-        .student-row.expanded .expand-icon {
-            transform: rotate(90deg);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-
-        .empty-state h2 {
-            margin-bottom: 10px;
-            color: #495057;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 20px;
-        }
-
-        /* Comments styles */
-        .comments-section {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f1f3f5;
-            border-radius: 6px;
-            display: none;
-        }
-
-        .comments-section.show {
-            display: block;
-        }
-
-        .comments-header {
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #495057;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .comment {
-            background: white;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            border-left: 3px solid #dee2e6;
-        }
-
-        .comment.instructor {
-            border-left-color: #667eea;
-        }
-
-        .comment.student {
-            border-left-color: #28a745;
-        }
-
-        .comment-author {
-            font-weight: 600;
-            font-size: 12px;
-            color: #495057;
-            margin-bottom: 4px;
-        }
-
-        .comment-author .badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            margin-left: 6px;
-        }
-
-        .comment-text {
-            font-size: 13px;
-            color: #212529;
-            line-height: 1.5;
-            margin-bottom: 4px;
-        }
-
-        .comment-date {
-            font-size: 11px;
-            color: #6c757d;
-        }
-
-        .no-comments {
-            text-align: center;
-            padding: 15px;
-            color: #6c757d;
-            font-size: 13px;
-            font-style: italic;
-        }
-
-        .assignment-clickable {
-            cursor: pointer;
-        }
-
-        .assignment-clickable:hover .assignment-name {
-            color: #667eea;
-            text-decoration: underline;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .controls {
+        padding: 30px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .control-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      label {
+        font-weight: 600;
+        color: #495057;
+      }
+
+      select {
+        padding: 10px 15px;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        min-width: 300px;
+        transition: border-color 0.2s;
+      }
+
+      select:hover {
+        border-color: #667eea;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 60px;
+        color: #6c757d;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .stats {
+        padding: 30px;
+        display: flex;
+        gap: 20px;
+        background: #f8f9fa;
+        flex-wrap: wrap;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .stat-card h3 {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-card .value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #212529;
+      }
+
+      .stat-card.missing .value {
+        color: #dc3545;
+      }
+
+      .stat-card.late .value {
+        color: #ffc107;
+      }
+
+      .stat-card.incomplete .value {
+        color: #6c757d;
+      }
+
+      .table-container {
+        padding: 30px;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+      }
+
+      th {
+        background: #f8f9fa;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      th:hover {
+        background: #e9ecef;
+      }
+
+      th.sorted-asc::after {
+        content: " ▲";
+      }
+
+      th.sorted-desc::after {
+        content: " ▼";
+      }
+
+      td {
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      tbody tr:hover {
+        background: #e3f2fd !important;
+      }
+
+      .student-row.expanded {
+        background: #f8f9fa;
+      }
+
+      .details-row {
+        display: none;
+        background: #f8f9fa;
+      }
+
+      .details-row.show {
+        display: table-row;
+      }
+
+      .details-cell {
+        padding: 20px 30px !important;
+        border-bottom: 2px solid #dee2e6 !important;
+      }
+
+      .details-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .detail-section {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #dee2e6;
+      }
+
+      .detail-section.missing {
+        border-left-color: #dc3545;
+      }
+
+      .detail-section.late {
+        border-left-color: #ffc107;
+      }
+
+      .detail-section.incomplete {
+        border-left-color: #6c757d;
+      }
+
+      .detail-section h4 {
+        margin-bottom: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .detail-section ul {
+        list-style: none;
+      }
+
+      .detail-section li {
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .detail-section li:hover {
+        background: #e9ecef;
+      }
+
+      .assignment-name {
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #495057;
+      }
+
+      .assignment-date {
+        font-size: 12px;
+        color: #6c757d;
+      }
+
+      .badge {
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 15px;
+        font-weight: 700;
+        display: inline-block;
+      }
+
+      .badge.missing {
+        background: #dc3545;
+        color: white;
+      }
+
+      .badge.late {
+        background: #ffc107;
+        color: #212529;
+      }
+
+      .badge.incomplete {
+        background: #6c757d;
+        color: white;
+      }
+
+      .badge.ontime {
+        background: #28a745;
+        color: white;
+      }
+
+      .expand-icon {
+        display: inline-block;
+        margin-right: 8px;
+        transition: transform 0.2s;
+        font-size: 10px;
+      }
+
+      .student-row.expanded .expand-icon {
+        transform: rotate(90deg);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+      }
+
+      .empty-state h2 {
+        margin-bottom: 10px;
+        color: #495057;
+      }
+
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 20px;
+      }
+
+      /* Comments styles */
+      .comments-section {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f1f3f5;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .comments-section.show {
+        display: block;
+      }
+
+      .comments-header {
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #495057;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .comment {
+        background: white;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        border-left: 3px solid #dee2e6;
+      }
+
+      .comment.instructor {
+        border-left-color: #667eea;
+      }
+
+      .comment.student {
+        border-left-color: #28a745;
+      }
+
+      .comment-author {
+        font-weight: 600;
+        font-size: 12px;
+        color: #495057;
+        margin-bottom: 4px;
+      }
+
+      .comment-author .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        margin-left: 6px;
+      }
+
+      .comment-text {
+        font-size: 13px;
+        color: #212529;
+        line-height: 1.5;
+        margin-bottom: 4px;
+      }
+
+      .comment-date {
+        font-size: 11px;
+        color: #6c757d;
+      }
+
+      .no-comments {
+        text-align: center;
+        padding: 15px;
+        color: #6c757d;
+        font-size: 13px;
+        font-style: italic;
+      }
+
+      .assignment-clickable {
+        cursor: pointer;
+      }
+
+      .assignment-clickable:hover .assignment-name {
+        color: #667eea;
+        text-decoration: underline;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h1>📊 Canvas Student Analytics Dashboard</h1>
-                    <p>Track missing, late, and incomplete assignments across all your students</p>
-                </div>
-                <button id="logoutBtn" style="padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s;">
-                    Logout
-                </button>
-            </div>
+      <div class="header">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <div>
+            <h1>📊 Canvas Student Analytics Dashboard</h1>
+            <p>
+              Track missing, late, and incomplete assignments across all your
+              students
+            </p>
+          </div>
+          <div>
+            <a
+              href="https://stirring-unicorn-e11a02.netlify.app/"
+              target="_blank"
+              style="
+                padding: 10px 20px;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: background 0.2s;
+                text-decoration: none;
+                font-size: 13px;
+                margin-right: 2rem;
+              "
+              >Student Attendance</a
+            >
+            <button
+              id="logoutBtn"
+              style="
+                padding: 10px 20px;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: background 0.2s;
+              "
+            >
+              Logout
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div class="controls">
-            <div class="control-group">
-                <label for="courseSelect">Select Course:</label>
-                <select id="courseSelect">
-                    <option value="">Loading courses...</option>
-                </select>
-            </div>
+      <div class="controls">
+        <div class="control-group">
+          <label for="courseSelect">Select Course:</label>
+          <select id="courseSelect">
+            <option value="">Loading courses...</option>
+          </select>
         </div>
+      </div>
 
-        <div id="statsContainer" class="stats" style="display: none;">
-            <div class="stat-card missing">
-                <h3>Total Missing</h3>
-                <div class="value" id="totalMissing">0</div>
-            </div>
-            <div class="stat-card late">
-                <h3>Total Late</h3>
-                <div class="value" id="totalLate">0</div>
-            </div>
-            <div class="stat-card incomplete">
-                <h3>Total Incomplete</h3>
-                <div class="value" id="totalIncomplete">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>On Time</h3>
-                <div class="value" id="totalOnTime">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Students</h3>
-                <div class="value" id="totalStudents">0</div>
-            </div>
+      <div id="statsContainer" class="stats" style="display: none">
+        <div class="stat-card missing">
+          <h3>Total Missing</h3>
+          <div class="value" id="totalMissing">0</div>
         </div>
+        <div class="stat-card late">
+          <h3>Total Late</h3>
+          <div class="value" id="totalLate">0</div>
+        </div>
+        <div class="stat-card incomplete">
+          <h3>Total Incomplete</h3>
+          <div class="value" id="totalIncomplete">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>On Time</h3>
+          <div class="value" id="totalOnTime">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Total Students</h3>
+          <div class="value" id="totalStudents">0</div>
+        </div>
+      </div>
 
-        <div id="content">
-            <div class="empty-state">
-                <h2>Welcome!</h2>
-                <p>Select a course above to view student analytics</p>
-            </div>
+      <div id="content">
+        <div class="empty-state">
+          <h2>Welcome!</h2>
+          <p>Select a course above to view student analytics</p>
         </div>
+      </div>
     </div>
 
     <script>
-        // Check authentication on page load
-        async function checkAuth() {
-            try {
-                const response = await fetch('/api/auth/status', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                
-                if (!data.authenticated) {
-                    window.location.href = '/login.html';
-                }
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                window.location.href = '/login.html';
-            }
-        }
+      // Check authentication on page load
+      async function checkAuth() {
+        try {
+          const response = await fetch("/api/auth/status", {
+            credentials: "include",
+          });
+          const data = await response.json();
 
-        // Logout handler
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            try {
-                await fetch('/api/logout', { 
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/login.html';
-            } catch (error) {
-                console.error('Logout failed:', error);
-            }
+          if (!data.authenticated) {
+            window.location.href = "/login.html";
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          window.location.href = "/login.html";
+        }
+      }
+
+      // Logout handler
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", async () => {
+          try {
+            await fetch("/api/logout", {
+              method: "POST",
+              credentials: "include",
+            });
+            window.location.href = "/login.html";
+          } catch (error) {
+            console.error("Logout failed:", error);
+          }
         });
 
-        // Check auth before doing anything
-        checkAuth();
+      // Check auth before doing anything
+      checkAuth();
 
-        let studentsData = [];
-        let currentSort = { column: 'name', direction: 'asc' };
+      let studentsData = [];
+      let currentSort = { column: "name", direction: "asc" };
 
-        // Load courses on page load
-        async function loadCourses() {
-            try {
-                const response = await fetch('/api/courses', {
-                    credentials: 'include'
-                });
-                const courses = await response.json();
-                
-                const select = document.getElementById('courseSelect');
-                select.innerHTML = '<option value="">-- Select a course --</option>';
-                
-                courses.forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course.id;
-                    option.textContent = `${course.name} (${course.total_students} students)`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading courses:', error);
-                document.getElementById('courseSelect').innerHTML = `
+      // Load courses on page load
+      async function loadCourses() {
+        try {
+          const response = await fetch("/api/courses", {
+            credentials: "include",
+          });
+          const courses = await response.json();
+
+          const select = document.getElementById("courseSelect");
+          select.innerHTML = '<option value="">-- Select a course --</option>';
+
+          courses.forEach((course) => {
+            const option = document.createElement("option");
+            option.value = course.id;
+            option.textContent = `${course.name} (${course.total_students} students)`;
+            select.appendChild(option);
+          });
+        } catch (error) {
+          console.error("Error loading courses:", error);
+          document.getElementById("courseSelect").innerHTML = `
                     <option value="">Error loading courses</option>
                 `;
-            }
         }
+      }
 
-        // Load student analytics for selected course
-        async function loadAnalytics(courseId) {
-            if (!courseId) {
-                document.getElementById('content').innerHTML = `
+      // Load student analytics for selected course
+      async function loadAnalytics(courseId) {
+        if (!courseId) {
+          document.getElementById("content").innerHTML = `
                     <div class="empty-state">
                         <h2>Welcome!</h2>
                         <p>Select a course above to view student analytics</p>
                     </div>
                 `;
-                document.getElementById('statsContainer').style.display = 'none';
-                return;
-            }
+          document.getElementById("statsContainer").style.display = "none";
+          return;
+        }
 
-            // Show loading state
-            document.getElementById('content').innerHTML = `
+        // Show loading state
+        document.getElementById("content").innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
                     <p>Loading student data...</p>
                 </div>
             `;
-            document.getElementById('statsContainer').style.display = 'none';
+        document.getElementById("statsContainer").style.display = "none";
 
-            try {
-                const response = await fetch(`/api/courses/${courseId}/analytics`, {
-                    credentials: 'include'
-                });
-                studentsData = await response.json();
-                
-                displayAnalytics(studentsData);
-            } catch (error) {
-                console.error('Error loading analytics:', error);
-                document.getElementById('content').innerHTML = `
+        try {
+          const response = await fetch(`/api/courses/${courseId}/analytics`, {
+            credentials: "include",
+          });
+          studentsData = await response.json();
+
+          displayAnalytics(studentsData);
+        } catch (error) {
+          console.error("Error loading analytics:", error);
+          document.getElementById("content").innerHTML = `
                     <div class="error">
                         <strong>Error:</strong> Failed to load student analytics. Please try again.
                     </div>
                 `;
-            }
         }
+      }
 
-        // Format comment date
-        function formatCommentDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            
-            if (diffDays === 0) {
-                return 'Today';
-            } else if (diffDays === 1) {
-                return 'Yesterday';
-            } else if (diffDays < 7) {
-                return `${diffDays} days ago`;
-            } else {
-                return date.toLocaleDateString();
-            }
+      // Format comment date
+      function formatCommentDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+          return "Today";
+        } else if (diffDays === 1) {
+          return "Yesterday";
+        } else if (diffDays < 7) {
+          return `${diffDays} days ago`;
+        } else {
+          return date.toLocaleDateString();
         }
+      }
 
-        // Generate comments HTML
-        function generateCommentsHTML(assignment, uniqueId) {
-            // console.log('Generating comments HTML for:', assignment.name, 'Comments:', assignment.comments);
-            
-            if (!assignment.comments || assignment.comments.length === 0) {
-                // console.log('No comments for this assignment');
-                return `
+      // Generate comments HTML
+      function generateCommentsHTML(assignment, uniqueId) {
+        // console.log('Generating comments HTML for:', assignment.name, 'Comments:', assignment.comments);
+
+        if (!assignment.comments || assignment.comments.length === 0) {
+          // console.log('No comments for this assignment');
+          return `
                     <div class="comments-section" id="comments-${uniqueId}">
                         <div class="comments-header">💬 Submission Comments</div>
                         <div class="no-comments">No comments on this assignment yet</div>
                     </div>
                 `;
-            }
-            
-            // console.log(`Assignment has ${assignment.comments.length} comments`);
+        }
 
-            const commentsHTML = assignment.comments.map(comment => {
-                const isInstructor = comment.author_id !== comment.author?.id || comment.author_name?.includes('Instructor');
-                return `
-                    <div class="comment ${isInstructor ? 'instructor' : 'student'}">
+        // console.log(`Assignment has ${assignment.comments.length} comments`);
+
+        const commentsHTML = assignment.comments
+          .map((comment) => {
+            const isInstructor =
+              comment.author_id !== comment.author?.id ||
+              comment.author_name?.includes("Instructor");
+            return `
+                    <div class="comment ${
+                      isInstructor ? "instructor" : "student"
+                    }">
                         <div class="comment-author">
-                            ${comment.author_name || 'Unknown'}
-                            <span class="badge ${isInstructor ? 'instructor' : 'student'}">
-                                ${isInstructor ? 'Instructor' : 'Student'}
+                            ${comment.author_name || "Unknown"}
+                            <span class="badge ${
+                              isInstructor ? "instructor" : "student"
+                            }">
+                                ${isInstructor ? "Instructor" : "Student"}
                             </span>
                         </div>
                         <div class="comment-text">${comment.comment}</div>
-                        <div class="comment-date">${formatCommentDate(comment.created_at)}</div>
+                        <div class="comment-date">${formatCommentDate(
+                          comment.created_at
+                        )}</div>
                     </div>
                 `;
-            }).join('');
+          })
+          .join("");
 
-            return `
+        return `
                 <div class="comments-section" id="comments-${uniqueId}">
                     <div class="comments-header">💬 Submission Comments (${assignment.comments.length})</div>
                     ${commentsHTML}
                 </div>
             `;
-        }
+      }
 
-        // Toggle comments visibility
-        function toggleComments(uniqueId) {
-            // console.log('toggleComments called with ID:', uniqueId);
-            const commentsSection = document.getElementById(`comments-${uniqueId}`);
-            // console.log('Found comments section:', commentsSection);
-            if (commentsSection) {
-                commentsSection.classList.toggle('show');
-                // console.log('Toggled show class, now has show:', commentsSection.classList.contains('show'));
-            } else {
-                console.log('ERROR: Could not find comments section with ID:', `comments-${uniqueId}`);
-            }
+      // Toggle comments visibility
+      function toggleComments(uniqueId) {
+        // console.log('toggleComments called with ID:', uniqueId);
+        const commentsSection = document.getElementById(`comments-${uniqueId}`);
+        // console.log('Found comments section:', commentsSection);
+        if (commentsSection) {
+          commentsSection.classList.toggle("show");
+          // console.log('Toggled show class, now has show:', commentsSection.classList.contains('show'));
+        } else {
+          console.log(
+            "ERROR: Could not find comments section with ID:",
+            `comments-${uniqueId}`
+          );
         }
+      }
 
-        // Display analytics in table
-        function displayAnalytics(students) {
-            if (students.length === 0) {
-                document.getElementById('content').innerHTML = `
+      // Display analytics in table
+      function displayAnalytics(students) {
+        if (students.length === 0) {
+          document.getElementById("content").innerHTML = `
                     <div class="empty-state">
                         <h2>No Students Found</h2>
                         <p>This course doesn't have any active students.</p>
                     </div>
                 `;
-                return;
-            }
+          return;
+        }
 
-            // Calculate totals
-            const totals = students.reduce((acc, student) => {
-                acc.missing += student.missing;
-                acc.late += student.late;
-                acc.onTime += student.onTime;
-                acc.incomplete += student.incomplete || 0;
-                return acc;
-            }, { missing: 0, late: 0, onTime: 0, incomplete: 0 });
+        // Calculate totals
+        const totals = students.reduce(
+          (acc, student) => {
+            acc.missing += student.missing;
+            acc.late += student.late;
+            acc.onTime += student.onTime;
+            acc.incomplete += student.incomplete || 0;
+            return acc;
+          },
+          { missing: 0, late: 0, onTime: 0, incomplete: 0 }
+        );
 
-            // Update stats
-            document.getElementById('totalMissing').textContent = totals.missing;
-            document.getElementById('totalLate').textContent = totals.late;
-            document.getElementById('totalIncomplete').textContent = totals.incomplete;
-            document.getElementById('totalOnTime').textContent = totals.onTime;
-            document.getElementById('totalStudents').textContent = students.length;
-            document.getElementById('statsContainer').style.display = 'flex';
+        // Update stats
+        document.getElementById("totalMissing").textContent = totals.missing;
+        document.getElementById("totalLate").textContent = totals.late;
+        document.getElementById("totalIncomplete").textContent =
+          totals.incomplete;
+        document.getElementById("totalOnTime").textContent = totals.onTime;
+        document.getElementById("totalStudents").textContent = students.length;
+        document.getElementById("statsContainer").style.display = "flex";
 
-            // Create table
-            const tableHTML = `
+        // Create table
+        const tableHTML = `
                 <div class="table-container">
                     <table>
                         <thead>
@@ -681,174 +746,253 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${students.map((student, index) => `
+                            ${students
+                              .map(
+                                (student, index) => `
                                 <tr class="student-row" data-student-index="${index}">
-                                    <td><span class="expand-icon">▶</span>${student.name}</td>
-                                    <td><span class="badge missing">${student.missing}</span></td>
-                                    <td><span class="badge late">${student.late}</span></td>
-                                    <td><span class="badge incomplete">${student.incomplete || 0}</span></td>
-                                    <td><span class="badge ontime">${student.onTime}</span></td>
+                                    <td><span class="expand-icon">▶</span>${
+                                      student.name
+                                    }</td>
+                                    <td><span class="badge missing">${
+                                      student.missing
+                                    }</span></td>
+                                    <td><span class="badge late">${
+                                      student.late
+                                    }</span></td>
+                                    <td><span class="badge incomplete">${
+                                      student.incomplete || 0
+                                    }</span></td>
+                                    <td><span class="badge ontime">${
+                                      student.onTime
+                                    }</span></td>
                                     <td>${student.total}</td>
                                 </tr>
                                 <tr class="details-row" data-details-index="${index}">
                                     <td colspan="6" class="details-cell">
                                         <div class="details-content">
-                                            ${student.missing > 0 ? `
+                                            ${
+                                              student.missing > 0
+                                                ? `
                                                 <div class="detail-section missing">
-                                                    <h4>Missing Assignments (${student.missing})</h4>
+                                                    <h4>Missing Assignments (${
+                                                      student.missing
+                                                    })</h4>
                                                     <ul>
-                                                        ${student.missingList.map((a, aIndex) => {
+                                                        ${student.missingList
+                                                          .map((a, aIndex) => {
                                                             const uniqueId = `missing-${index}-${aIndex}`;
                                                             return `
                                                                 <li class="assignment-clickable" data-assignment-id="${uniqueId}">
-                                                                    <div class="assignment-name">📄 ${a.name}</div>
-                                                                    <div class="assignment-date">Due: ${new Date(a.dueDate).toLocaleDateString()}</div>
-                                                                    ${generateCommentsHTML(a, uniqueId)}
+                                                                    <div class="assignment-name">📄 ${
+                                                                      a.name
+                                                                    }</div>
+                                                                    <div class="assignment-date">Due: ${new Date(
+                                                                      a.dueDate
+                                                                    ).toLocaleDateString()}</div>
+                                                                    ${generateCommentsHTML(
+                                                                      a,
+                                                                      uniqueId
+                                                                    )}
                                                                 </li>
                                                             `;
-                                                        }).join('')}
+                                                          })
+                                                          .join("")}
                                                     </ul>
                                                 </div>
-                                            ` : ''}
-                                            ${student.late > 0 ? `
+                                            `
+                                                : ""
+                                            }
+                                            ${
+                                              student.late > 0
+                                                ? `
                                                 <div class="detail-section late">
-                                                    <h4>Late Assignments (${student.late})</h4>
+                                                    <h4>Late Assignments (${
+                                                      student.late
+                                                    })</h4>
                                                     <ul>
-                                                        ${student.lateList.map((a, aIndex) => {
+                                                        ${student.lateList
+                                                          .map((a, aIndex) => {
                                                             const uniqueId = `late-${index}-${aIndex}`;
                                                             return `
                                                                 <li class="assignment-clickable" data-assignment-id="${uniqueId}">
-                                                                    <div class="assignment-name">📄 ${a.name}</div>
-                                                                    <div class="assignment-date">Due: ${new Date(a.dueDate).toLocaleDateString()} | Submitted: ${new Date(a.submittedAt).toLocaleDateString()}</div>
-                                                                    ${generateCommentsHTML(a, uniqueId)}
+                                                                    <div class="assignment-name">📄 ${
+                                                                      a.name
+                                                                    }</div>
+                                                                    <div class="assignment-date">Due: ${new Date(
+                                                                      a.dueDate
+                                                                    ).toLocaleDateString()} | Submitted: ${new Date(
+                                                              a.submittedAt
+                                                            ).toLocaleDateString()}</div>
+                                                                    ${generateCommentsHTML(
+                                                                      a,
+                                                                      uniqueId
+                                                                    )}
                                                                 </li>
                                                             `;
-                                                        }).join('')}
+                                                          })
+                                                          .join("")}
                                                     </ul>
                                                 </div>
-                                            ` : ''}
-                                            ${(student.incomplete || 0) > 0 ? `
+                                            `
+                                                : ""
+                                            }
+                                            ${
+                                              (student.incomplete || 0) > 0
+                                                ? `
                                                 <div class="detail-section incomplete">
-                                                    <h4>Incomplete Assignments (${student.incomplete})</h4>
+                                                    <h4>Incomplete Assignments (${
+                                                      student.incomplete
+                                                    })</h4>
                                                     <ul>
-                                                        ${student.incompleteList.map((a, aIndex) => {
+                                                        ${student.incompleteList
+                                                          .map((a, aIndex) => {
                                                             const uniqueId = `incomplete-${index}-${aIndex}`;
                                                             return `
                                                                 <li class="assignment-clickable" data-assignment-id="${uniqueId}">
-                                                                    <div class="assignment-name">📄 ${a.name}</div>
-                                                                    <div class="assignment-date">Due: ${new Date(a.dueDate).toLocaleDateString()} | Submitted: ${new Date(a.submittedAt).toLocaleDateString()}</div>
-                                                                    ${generateCommentsHTML(a, uniqueId)}
+                                                                    <div class="assignment-name">📄 ${
+                                                                      a.name
+                                                                    }</div>
+                                                                    <div class="assignment-date">Due: ${new Date(
+                                                                      a.dueDate
+                                                                    ).toLocaleDateString()} | Submitted: ${new Date(
+                                                              a.submittedAt
+                                                            ).toLocaleDateString()}</div>
+                                                                    ${generateCommentsHTML(
+                                                                      a,
+                                                                      uniqueId
+                                                                    )}
                                                                 </li>
                                                             `;
-                                                        }).join('')}
+                                                          })
+                                                          .join("")}
                                                     </ul>
                                                 </div>
-                                            ` : ''}
-                                            ${student.missing === 0 && student.late === 0 && (student.incomplete || 0) === 0 ? `
+                                            `
+                                                : ""
+                                            }
+                                            ${
+                                              student.missing === 0 &&
+                                              student.late === 0 &&
+                                              (student.incomplete || 0) === 0
+                                                ? `
                                                 <div style="padding: 20px; text-align: center; color: #28a745;">
                                                     <strong>✓ All caught up!</strong>
                                                 </div>
-                                            ` : ''}
+                                            `
+                                                : ""
+                                            }
                                         </div>
                                     </td>
                                 </tr>
-                            `).join('')}
+                            `
+                              )
+                              .join("")}
                         </tbody>
                     </table>
                 </div>
             `;
 
-            document.getElementById('content').innerHTML = tableHTML;
+        document.getElementById("content").innerHTML = tableHTML;
 
-            // console.log('Table HTML inserted');
+        // console.log('Table HTML inserted');
 
-            // Add sorting functionality
-            document.querySelectorAll('th[data-column]').forEach(th => {
-                th.addEventListener('click', () => sortTable(th.dataset.column));
-            });
-
-            // Add click handlers for expanding rows
-            document.querySelectorAll('.student-row').forEach(row => {
-                row.addEventListener('click', function(e) {
-                    // Don't toggle if clicking on an assignment
-                    if (e.target.closest('.assignment-clickable')) {
-                        console.log('Click was on assignment, ignoring student row toggle');
-                        return;
-                    }
-                    
-                    const index = this.dataset.studentIndex;
-                    const detailsRow = document.querySelector(`tr.details-row[data-details-index="${index}"]`);
-                    
-                    this.classList.toggle('expanded');
-                    detailsRow.classList.toggle('show');
-                    // console.log('Student row toggled, expanded:', this.classList.contains('expanded'));
-                });
-            });
-
-            // Use event delegation for assignment clicks - attach to content div
-            document.getElementById('content').addEventListener('click', function(e) {
-                const assignmentLi = e.target.closest('.assignment-clickable');
-                if (assignmentLi) {
-                    // console.log('Assignment clicked!');
-                    const uniqueId = assignmentLi.getAttribute('data-assignment-id');
-                    // console.log('Assignment ID:', uniqueId);
-                    toggleComments(uniqueId);
-                }
-            });
-        }
-
-        // Sort table by column
-        function sortTable(column) {
-            // Toggle direction if clicking same column
-            if (currentSort.column === column) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.column = column;
-                currentSort.direction = 'asc';
-            }
-
-            // Sort data
-            const sortedData = [...studentsData].sort((a, b) => {
-                let aVal = column === 'name' ? a.sortable_name || a.name : a[column];
-                let bVal = column === 'name' ? b.sortable_name || b.name : b[column];
-
-                if (typeof aVal === 'string') {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
-                }
-
-                if (currentSort.direction === 'asc') {
-                    return aVal > bVal ? 1 : -1;
-                } else {
-                    return aVal < bVal ? 1 : -1;
-                }
-            });
-
-            displayAnalytics(sortedData);
-
-            // Update sort indicators
-            document.querySelectorAll('th').forEach(th => {
-                th.classList.remove('sorted-asc', 'sorted-desc');
-            });
-            document.querySelector(`th[data-column="${column}"]`)
-                .classList.add(`sorted-${currentSort.direction}`);
-        }
-
-        // Global click listener for debugging
-        document.addEventListener('click', function(e) {
-            // console.log('CLICK DETECTED:', e.target);
-            if (e.target.closest('.assignment-clickable')) {
-                // console.log('>>> ASSIGNMENT CLICKED <<<');
-            }
+        // Add sorting functionality
+        document.querySelectorAll("th[data-column]").forEach((th) => {
+          th.addEventListener("click", () => sortTable(th.dataset.column));
         });
 
-        // Event listeners
-        document.getElementById('courseSelect').addEventListener('change', (e) => {
-            loadAnalytics(e.target.value);
+        // Add click handlers for expanding rows
+        document.querySelectorAll(".student-row").forEach((row) => {
+          row.addEventListener("click", function (e) {
+            // Don't toggle if clicking on an assignment
+            if (e.target.closest(".assignment-clickable")) {
+              console.log(
+                "Click was on assignment, ignoring student row toggle"
+              );
+              return;
+            }
+
+            const index = this.dataset.studentIndex;
+            const detailsRow = document.querySelector(
+              `tr.details-row[data-details-index="${index}"]`
+            );
+
+            this.classList.toggle("expanded");
+            detailsRow.classList.toggle("show");
+            // console.log('Student row toggled, expanded:', this.classList.contains('expanded'));
+          });
         });
 
-        // Initialize
-        loadCourses();
+        // Use event delegation for assignment clicks - attach to content div
+        document
+          .getElementById("content")
+          .addEventListener("click", function (e) {
+            const assignmentLi = e.target.closest(".assignment-clickable");
+            if (assignmentLi) {
+              // console.log('Assignment clicked!');
+              const uniqueId = assignmentLi.getAttribute("data-assignment-id");
+              // console.log('Assignment ID:', uniqueId);
+              toggleComments(uniqueId);
+            }
+          });
+      }
+
+      // Sort table by column
+      function sortTable(column) {
+        // Toggle direction if clicking same column
+        if (currentSort.column === column) {
+          currentSort.direction =
+            currentSort.direction === "asc" ? "desc" : "asc";
+        } else {
+          currentSort.column = column;
+          currentSort.direction = "asc";
+        }
+
+        // Sort data
+        const sortedData = [...studentsData].sort((a, b) => {
+          let aVal = column === "name" ? a.sortable_name || a.name : a[column];
+          let bVal = column === "name" ? b.sortable_name || b.name : b[column];
+
+          if (typeof aVal === "string") {
+            aVal = aVal.toLowerCase();
+            bVal = bVal.toLowerCase();
+          }
+
+          if (currentSort.direction === "asc") {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+
+        displayAnalytics(sortedData);
+
+        // Update sort indicators
+        document.querySelectorAll("th").forEach((th) => {
+          th.classList.remove("sorted-asc", "sorted-desc");
+        });
+        document
+          .querySelector(`th[data-column="${column}"]`)
+          .classList.add(`sorted-${currentSort.direction}`);
+      }
+
+      // Global click listener for debugging
+      document.addEventListener("click", function (e) {
+        // console.log('CLICK DETECTED:', e.target);
+        if (e.target.closest(".assignment-clickable")) {
+          // console.log('>>> ASSIGNMENT CLICKED <<<');
+        }
+      });
+
+      // Event listeners
+      document
+        .getElementById("courseSelect")
+        .addEventListener("change", (e) => {
+          loadAnalytics(e.target.value);
+        });
+
+      // Initialize
+      loadCourses();
     </script>
-</body>
+  </body>
 </html>
