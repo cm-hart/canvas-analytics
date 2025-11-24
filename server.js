@@ -212,7 +212,7 @@ app.get('/api/courses/:courseId/analytics', requireAuth, async (req, res) => {
             `/courses/${courseId}/students/submissions`,
             {
               student_ids: [student.id],
-              include: ['submission_comments'],
+              include: ['submission_comments', 'submission_history'],
               per_page: 100
             }
           );
@@ -279,16 +279,6 @@ app.get('/api/courses/:courseId/analytics', requireAuth, async (req, res) => {
                 assignmentId: assignment.id,
                 submissionId: submission.id
               });
-            } else if (submission.late) {
-              late++;
-              lateList.push({
-                name: assignment.name,
-                dueDate: dueDate,
-                submittedAt: submission.submitted_at,
-                comments: submission.submission_comments || [],
-                assignmentId: assignment.id,
-                submissionId: submission.id
-              });
             } else if (!submission.submitted_at && isPastDue && submission.workflow_state === 'unsubmitted') {
               // Past due, no submission, but Canvas didn't flag it as missing
               missing++;
@@ -299,9 +289,45 @@ app.get('/api/courses/:courseId/analytics', requireAuth, async (req, res) => {
                 assignmentId: assignment.id,
                 submissionId: submission.id
               });
-            } else if (submission.submitted_at && !submission.missing && !submission.late) {
-              // Has a submission and it's not late or missing
-              onTime++;
+            } else if (submission.submitted_at) {
+              // Check if the FIRST submission was late
+              // Use submission_history to find the first submission
+              let wasLate = false;
+              
+              if (submission.submission_history && submission.submission_history.length > 0) {
+                // Find the first actual submission (not null)
+                const firstSubmission = submission.submission_history
+                  .filter(s => s.submitted_at)
+                  .sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))[0];
+                
+                if (firstSubmission && firstSubmission.submitted_at) {
+                  const firstSubmittedDate = new Date(firstSubmission.submitted_at);
+                  wasLate = firstSubmittedDate > dueDateObj;
+                }
+              } else {
+                // Fallback: use seconds_late if available, otherwise compare submitted_at to due date
+                if (submission.seconds_late !== undefined && submission.seconds_late !== null) {
+                  wasLate = submission.seconds_late > 0;
+                } else {
+                  const submittedDate = new Date(submission.submitted_at);
+                  wasLate = submittedDate > dueDateObj;
+                }
+              }
+              
+              if (wasLate) {
+                late++;
+                lateList.push({
+                  name: assignment.name,
+                  dueDate: dueDate,
+                  submittedAt: submission.submitted_at,
+                  comments: submission.submission_comments || [],
+                  assignmentId: assignment.id,
+                  submissionId: submission.id
+                });
+              } else {
+                // Has a submission and it's not late or missing
+                onTime++;
+              }
             }
           });
           
