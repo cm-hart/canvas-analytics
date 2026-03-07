@@ -435,6 +435,23 @@
           </div>
           <div>
             <a
+              href="/submissions"
+              style="
+                padding: 10px 20px;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: background 0.2s;
+                text-decoration: none;
+                font-size: 13px;
+                margin-right: 0.5rem;
+              "
+              >Submissions & Comments</a
+            >
+            <a
               href="https://ac-student-portal.netlify.app/"
               target="_blank"
               style="
@@ -552,26 +569,45 @@
 
       // Load courses on page load
       async function loadCourses() {
+        const select = document.getElementById("courseSelect");
         try {
           const response = await fetch("/api/courses", {
             credentials: "include",
           });
-          const courses = await response.json();
+          const data = await response.json();
 
-          const select = document.getElementById("courseSelect");
+          if (!response.ok) {
+            const msg = data.error || "Error loading courses";
+            select.innerHTML = `<option value="">${msg}</option>`;
+            document.getElementById("content").innerHTML = `
+              <div class="error"><strong>Error:</strong> ${msg}</div>
+            `;
+            return;
+          }
+
+          const courses = Array.isArray(data) ? data : [];
           select.innerHTML = '<option value="">-- Select a course --</option>';
-
           courses.forEach((course) => {
             const option = document.createElement("option");
             option.value = course.id;
             option.textContent = `${course.name} (${course.total_students} students)`;
             select.appendChild(option);
           });
+          if (courses.length === 0) {
+            document.getElementById("content").innerHTML = `
+              <div class="empty-state"><h2>No courses</h2><p>No active courses found for your account.</p></div>
+            `;
+          } else {
+            document.getElementById("content").innerHTML = `
+              <div class="empty-state"><h2>Welcome!</h2><p>Select a course above to view student analytics</p></div>
+            `;
+          }
         } catch (error) {
           console.error("Error loading courses:", error);
-          document.getElementById("courseSelect").innerHTML = `
-                    <option value="">Error loading courses</option>
-                `;
+          select.innerHTML = `<option value="">Error loading courses</option>`;
+          document.getElementById("content").innerHTML = `
+            <div class="error"><strong>Error:</strong> Could not load courses. Check the console or try again.</div>
+          `;
         }
       }
 
@@ -601,8 +637,15 @@
           const response = await fetch(`/api/courses/${courseId}/analytics`, {
             credentials: "include",
           });
-          studentsData = await response.json();
+          const data = await response.json();
 
+          if (!response.ok) {
+            document.getElementById("content").innerHTML = `
+              <div class="error"><strong>Error:</strong> ${data.error || 'Failed to load analytics'}</div>
+            `;
+            return;
+          }
+          studentsData = Array.isArray(data) ? data : [];
           displayAnalytics(studentsData);
         } catch (error) {
           console.error("Error loading analytics:", error);

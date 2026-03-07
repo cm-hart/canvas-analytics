@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submissions & Comments | Canvas Analytics</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .header-links {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .header-links a,
+      .header-links button {
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s;
+        text-decoration: none;
+        font-size: 13px;
+      }
+
+      .header-links a:hover,
+      .header-links button:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .controls {
+        padding: 30px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .control-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      label {
+        font-weight: 600;
+        color: #495057;
+      }
+
+      select {
+        padding: 10px 15px;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        min-width: 300px;
+        transition: border-color 0.2s;
+      }
+
+      select:hover {
+        border-color: #667eea;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 60px;
+        color: #6c757d;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .content-area {
+        padding: 30px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+      }
+
+      .empty-state h2 {
+        margin-bottom: 10px;
+        color: #495057;
+      }
+
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 20px;
+      }
+
+      .assignment-block {
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+      }
+
+      .assignment-header {
+        padding: 16px 20px;
+        background: white;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .assignment-header h3 {
+        font-size: 18px;
+        color: #212529;
+      }
+
+      .assignment-meta {
+        font-size: 13px;
+        color: #6c757d;
+      }
+
+      .submission-list {
+        padding: 16px;
+      }
+
+      .submission-card {
+        background: white;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      }
+
+      .submission-card:last-child {
+        margin-bottom: 0;
+      }
+
+      .submission-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .submission-student {
+        font-weight: 600;
+        color: #212529;
+        font-size: 15px;
+      }
+
+      .submission-meta {
+        font-size: 12px;
+        color: #6c757d;
+      }
+
+      .submission-meta .grade {
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .comments-list {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e9ecef;
+      }
+
+      .comments-list-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+      }
+
+      .comment-item {
+        background: #f1f3f5;
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 4px;
+        border-left: 3px solid #667eea;
+      }
+
+      .comment-item .comment-author {
+        font-weight: 600;
+        font-size: 12px;
+        color: #495057;
+        margin-bottom: 4px;
+      }
+
+      .comment-item .comment-text {
+        font-size: 13px;
+        color: #212529;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .comment-item .comment-date {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 6px;
+      }
+
+      .no-comments {
+        font-size: 13px;
+        color: #6c757d;
+        font-style: italic;
+        padding: 8px 0;
+      }
+
+      .submission-content {
+        margin-top: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        border-left: 3px solid #667eea;
+      }
+
+      .submission-content-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .submission-content-body {
+        font-size: 13px;
+        color: #212529;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .submission-content-body.html-content {
+        white-space: normal;
+      }
+
+      .submission-content-url {
+        font-size: 13px;
+        margin-top: 6px;
+      }
+
+      .submission-content-url a {
+        color: #667eea;
+        word-break: break-all;
+      }
+
+      .submission-attachments {
+        margin-top: 8px;
+        list-style: none;
+      }
+
+      .submission-attachments li {
+        margin-bottom: 4px;
+      }
+
+      .submission-attachments a {
+        font-size: 13px;
+        color: #667eea;
+        word-break: break-all;
+      }
+
+      .no-submissions {
+        padding: 20px;
+        text-align: center;
+        color: #6c757d;
+        font-size: 14px;
+      }
+
+      .stats-bar {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding: 16px 30px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .stats-bar span {
+        font-size: 14px;
+        color: #495057;
+      }
+
+      .stats-bar strong {
+        color: #212529;
+      }
+
+      .student-block {
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+      }
+
+      .student-block .assignment-header {
+        background: #e9ecef;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <h1>Submissions & Comments</h1>
+            <p>View all submissions and comments by students and instructors</p>
+          </div>
+          <div class="header-links">
+            <a href="/">Analytics Dashboard</a>
+            <a href="https://ac-student-portal.netlify.app/" target="_blank">Student Attendance</a>
+            <button type="button" id="logoutBtn">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="courseSelect">Select Course:</label>
+          <select id="courseSelect">
+            <option value="">Loading courses...</option>
+          </select>
+          <label for="assignmentSelect" style="margin-left: 24px;">Select Assignment:</label>
+          <select id="assignmentSelect" disabled>
+            <option value="">-- Select a course first --</option>
+          </select>
+          <label for="viewToggle" style="margin-left: 24px;">View:</label>
+          <select id="viewToggle">
+            <option value="assignment">By assignment</option>
+            <option value="student">By student</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="statsBar" class="stats-bar" style="display: none;">
+        <span><strong id="statSubmissions">0</strong> submissions</span>
+        <span><strong id="statComments">0</strong> comments</span>
+      </div>
+
+      <div id="content" class="content-area">
+        <div class="empty-state">
+          <h2>Select a course and assignment</h2>
+          <p>Choose a course, then an assignment to view submissions and comments.</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function checkAuth() {
+        try {
+          const response = await fetch('/api/auth/status', { credentials: 'include' });
+          const data = await response.json();
+          if (!data.authenticated) {
+            window.location.href = '/login.html';
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          window.location.href = '/login.html';
+        }
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+          await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+          window.location.href = '/login.html';
+        } catch (error) {
+          console.error('Logout failed:', error);
+        }
+      });
+
+      let lastAssignmentsData = [];
+
+      function fetchWithTimeout(url, options, ms) {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), ms);
+        return fetch(url, { ...options, signal: c.signal }).finally(() => clearTimeout(t));
+      }
+
+      async function loadCourses() {
+        const select = document.getElementById('courseSelect');
+        const content = document.getElementById('content');
+        if (!select || !content) return;
+        try {
+          const response = await fetchWithTimeout('/api/courses', { credentials: 'include' }, 60000);
+          let data;
+          try {
+            data = await response.json();
+          } catch (e) {
+            select.innerHTML = '<option value="">Invalid response from server</option>';
+            content.innerHTML = '<div class="error"><strong>Error:</strong> Server returned invalid JSON. Try again.</div>';
+            return;
+          }
+
+          if (!response.ok) {
+            const msg = (data && data.error) ? data.error : 'Error loading courses';
+            select.innerHTML = `<option value="">${escapeHtml(msg)}</option>`;
+            content.innerHTML = `<div class="error"><strong>Error:</strong> ${escapeHtml(msg)}</div>`;
+            return;
+          }
+
+          const courses = Array.isArray(data) ? data : [];
+          select.innerHTML = '<option value="">-- Select a course --</option>';
+          courses.forEach((course) => {
+            const option = document.createElement('option');
+            option.value = course.id;
+            option.textContent = `${course.name} (${course.total_students || 0} students)`;
+            select.appendChild(option);
+          });
+          if (courses.length === 0) {
+            content.innerHTML = '<div class="empty-state"><h2>No courses</h2><p>No active courses found for your account.</p></div>';
+          } else {
+            content.innerHTML = '<div class="empty-state"><h2>Select a course and assignment</h2><p>Choose a course, then an assignment to view submissions and comments.</p></div>';
+            const assignmentSelect = document.getElementById('assignmentSelect');
+            if (assignmentSelect) {
+              assignmentSelect.disabled = true;
+              assignmentSelect.innerHTML = '<option value="">-- Select a course first --</option>';
+            }
+          }
+        } catch (error) {
+          console.error('Error loading courses:', error);
+          const isTimeout = error.name === 'AbortError';
+          select.innerHTML = '<option value="">Error loading courses</option>';
+          content.innerHTML = '<div class="error"><strong>Error:</strong> ' + (isTimeout ? 'Request timed out. Check your connection and try again.' : 'Could not load courses. Try again.') + '</div>';
+        }
+      }
+
+      function formatDate(dateString) {
+        if (!dateString) return '—';
+        const d = new Date(dateString);
+        return d.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+      }
+
+      function formatCommentDate(dateString) {
+        if (dateString == null || dateString === '') return '—';
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '—';
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'Today ' + date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+        if (diffDays === 1) return 'Yesterday ' + date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+        if (diffDays < 7) return diffDays + ' days ago';
+        return date.toLocaleDateString();
+      }
+
+      function stripHtml(html) {
+        if (html == null) return '';
+        const s = String(html);
+        return s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+
+      function renderSubmissionContent(sub) {
+        if (!sub || typeof sub !== 'object') return '';
+        const rawBody = sub.body != null ? String(sub.body).trim() : '';
+        const body = rawBody ? (rawBody.indexOf('<') !== -1 ? stripHtml(rawBody) : rawBody) : '';
+        const url = sub.url != null ? String(sub.url).trim() : '';
+        const attachments = Array.isArray(sub.attachments) ? sub.attachments : [];
+        const hasBody = body.length > 0;
+        const hasUrl = url.length > 0 && (url.startsWith('http://') || url.startsWith('https://'));
+        const hasAttachments = attachments.length > 0;
+        if (!hasBody && !hasUrl && !hasAttachments) return '';
+        const parts = [];
+        if (hasBody) {
+          parts.push('<div class="submission-content-title">Submission content</div><div class="submission-content-body">' + escapeHtml(body) + '</div>');
+        }
+        if (hasUrl) {
+          parts.push('<div class="submission-content-url">Link: <a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(url) + '</a></div>');
+        }
+        if (hasAttachments) {
+          parts.push('<div class="submission-content-title">Attachments</div><ul class="submission-attachments">' + attachments.map((a) => {
+            const link = (a && a.url) ? escapeHtml(a.url) : '#';
+            const label = (a && (a.display_name || a.filename)) ? escapeHtml(String(a.display_name || a.filename)) : 'File';
+            return '<li><a href="' + link + '" target="_blank" rel="noopener noreferrer">' + label + '</a></li>';
+          }).join('') + '</ul>');
+        }
+        return '<div class="submission-content">' + parts.join('') + '</div>';
+      }
+
+      function renderSubmissionCard(sub, assignmentName, dueStr) {
+        if (!sub || typeof sub !== 'object') return '';
+        const comments = Array.isArray(sub.submission_comments) ? sub.submission_comments : [];
+        const commentsHtml = comments.length === 0
+          ? '<div class="no-comments">No comments</div>'
+          : comments.map((c) => `
+            <div class="comment-item">
+              <div class="comment-author">${escapeHtml((c && c.author_name) != null ? String(c.author_name) : 'Unknown')}</div>
+              <div class="comment-text">${escapeHtml((c && c.comment) != null ? String(c.comment) : '')}</div>
+              <div class="comment-date">${formatCommentDate(c && c.created_at)}</div>
+            </div>
+          `).join('');
+        const gradeStr = sub.grade != null ? sub.grade : (sub.score != null ? sub.score : '—');
+        const contentHtml = renderSubmissionContent(sub);
+        return `
+          <div class="submission-card">
+            <div class="submission-header">
+              <span class="submission-student">${escapeHtml(assignmentName != null ? String(assignmentName) : '')}</span>
+              <span class="submission-meta">
+                Due: ${dueStr || '—'} &nbsp;|&nbsp; Submitted: ${formatDate(sub.submitted_at)} &nbsp;|&nbsp; Grade: <span class="grade">${escapeHtml(String(gradeStr))}</span>
+              </span>
+            </div>
+            ${contentHtml}
+            <div class="comments-list">
+              <div class="comments-list-title">Comments (${comments.length})</div>
+              ${commentsHtml}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderByAssignment(assignments) {
+        let totalSubmissions = 0;
+        let totalComments = 0;
+        const list = Array.isArray(assignments) ? assignments : [];
+        const html = list.map((assignment) => {
+          if (!assignment || typeof assignment !== 'object') return '';
+          const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
+          const withSubmission = submissions.filter((s) => s && (s.submitted_at || (Array.isArray(s.submission_comments) && s.submission_comments.length > 0)));
+          totalSubmissions += withSubmission.length;
+          submissions.forEach((s) => { totalComments += (Array.isArray(s.submission_comments) ? s.submission_comments : []).length; });
+          const dueStr = assignment.due_at ? formatDate(assignment.due_at) : 'No due date';
+          const assignmentName = (assignment.name != null ? String(assignment.name) : 'Unnamed assignment');
+          const submissionsHtml = withSubmission.length === 0
+            ? '<div class="no-submissions">No submissions yet</div>'
+            : withSubmission.map((sub) => {
+                const comments = Array.isArray(sub.submission_comments) ? sub.submission_comments : [];
+                const commentsHtml = comments.length === 0
+                  ? '<div class="no-comments">No comments</div>'
+                  : comments.map((c) => `
+                    <div class="comment-item">
+                      <div class="comment-author">${escapeHtml((c && c.author_name) != null ? String(c.author_name) : 'Unknown')}</div>
+                      <div class="comment-text">${escapeHtml((c && c.comment) != null ? String(c.comment) : '')}</div>
+                      <div class="comment-date">${formatCommentDate(c && c.created_at)}</div>
+                    </div>
+                  `).join('');
+                const gradeStr = sub.grade != null ? sub.grade : (sub.score != null ? sub.score : '—');
+                const userName = (sub.user_name != null ? String(sub.user_name) : 'Unknown');
+                const contentHtml = renderSubmissionContent(sub);
+                return `
+                  <div class="submission-card">
+                    <div class="submission-header">
+                      <span class="submission-student">${escapeHtml(userName)}</span>
+                      <span class="submission-meta">
+                        Submitted: ${formatDate(sub.submitted_at)} &nbsp;|&nbsp; Grade: <span class="grade">${escapeHtml(String(gradeStr))}</span>
+                      </span>
+                    </div>
+                    ${contentHtml}
+                    <div class="comments-list">
+                      <div class="comments-list-title">Comments (${comments.length})</div>
+                      ${commentsHtml}
+                    </div>
+                  </div>
+                `;
+              }).join('');
+          return `
+            <div class="assignment-block">
+              <div class="assignment-header">
+                <h3>${escapeHtml(assignmentName)}</h3>
+                <span class="assignment-meta">Due: ${dueStr} &nbsp;·&nbsp; ${withSubmission.length} submission(s)</span>
+              </div>
+              <div class="submission-list">${submissionsHtml}</div>
+            </div>
+          `;
+        }).join('');
+        return { html, totalSubmissions, totalComments };
+      }
+
+      function renderByStudent(assignments) {
+        const byStudent = {};
+        let totalSubmissions = 0;
+        let totalComments = 0;
+        const list = Array.isArray(assignments) ? assignments : [];
+        list.forEach((assignment) => {
+          if (!assignment || typeof assignment !== 'object') return;
+          const dueStr = assignment.due_at ? formatDate(assignment.due_at) : 'No due date';
+          const subs = Array.isArray(assignment.submissions) ? assignment.submissions : [];
+          subs.forEach((sub) => {
+            if (!sub || typeof sub !== 'object') return;
+            if (!sub.submitted_at && (!Array.isArray(sub.submission_comments) || sub.submission_comments.length === 0)) return;
+            const uid = sub.user_id != null ? sub.user_id : 'unknown';
+            const name = (sub.user_name != null ? String(sub.user_name) : `User ${uid}`);
+            if (!byStudent[uid]) byStudent[uid] = { name, items: [] };
+            byStudent[uid].items.push({
+              assignmentName: assignment.name != null ? String(assignment.name) : 'Unnamed',
+              dueStr,
+              sub
+            });
+            totalSubmissions += 1;
+            totalComments += (Array.isArray(sub.submission_comments) ? sub.submission_comments : []).length;
+          });
+        });
+        const sortedStudents = Object.entries(byStudent).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || ''));
+        const html = sortedStudents.map(([userId, { name, items }]) => {
+          const cardsHtml = (Array.isArray(items) ? items : []).map((item) => {
+            const an = item && item.assignmentName != null ? item.assignmentName : '';
+            const ds = item && item.dueStr != null ? item.dueStr : '—';
+            const s = item && item.sub;
+            return renderSubmissionCard(s, an, ds);
+          }).join('');
+          return `
+            <div class="student-block">
+              <div class="assignment-header">
+                <h3>${escapeHtml(name != null ? String(name) : 'Unknown')}</h3>
+                <span class="assignment-meta">${items.length} assignment(s) submitted</span>
+              </div>
+              <div class="submission-list">${cardsHtml}</div>
+            </div>
+          `;
+        }).join('');
+        return { html, totalSubmissions, totalComments };
+      }
+
+      function renderContent(assignments) {
+        const viewEl = document.getElementById('viewToggle');
+        const statsBar = document.getElementById('statsBar');
+        const content = document.getElementById('content');
+        const list = Array.isArray(assignments) ? assignments : [];
+        const view = viewEl ? viewEl.value : 'assignment';
+        try {
+          const { html, totalSubmissions, totalComments } = view === 'student'
+            ? renderByStudent(list)
+            : renderByAssignment(list);
+          if (content) content.innerHTML = html.length ? html : '<div class="empty-state"><h2>No submissions</h2><p>No submissions or comments for this assignment yet.</p></div>';
+          const ss = document.getElementById('statSubmissions');
+          const sc = document.getElementById('statComments');
+          if (ss) ss.textContent = totalSubmissions;
+          if (sc) sc.textContent = totalComments;
+          if (statsBar) statsBar.style.display = 'flex';
+        } catch (err) {
+          console.error('Render error:', err);
+          const msg = err && err.message ? err.message : 'Something went wrong displaying the data.';
+          if (content) content.innerHTML = '<div class="error"><strong>Error:</strong> ' + escapeHtml(String(msg)) + '</div>';
+        }
+      }
+
+      async function loadAssignments(courseId) {
+        const assignmentSelect = document.getElementById('assignmentSelect');
+        const content = document.getElementById('content');
+        const statsBar = document.getElementById('statsBar');
+        if (!assignmentSelect || !content) return;
+        assignmentSelect.disabled = true;
+        assignmentSelect.innerHTML = '<option value="">Loading assignments...</option>';
+        lastAssignmentsData = [];
+        if (statsBar) statsBar.style.display = 'none';
+        content.innerHTML = '<div class="empty-state"><h2>Select an assignment</h2><p>Choose an assignment above to view submissions and comments.</p></div>';
+
+        if (!courseId) {
+          assignmentSelect.innerHTML = '<option value="">-- Select a course first --</option>';
+          return;
+        }
+        try {
+          const response = await fetchWithTimeout(`/api/courses/${courseId}/assignments`, { credentials: 'include' }, 60000);
+          let data;
+          try {
+            data = await response.json();
+          } catch (e) {
+            assignmentSelect.innerHTML = '<option value="">Invalid response</option>';
+            return;
+          }
+          if (!response.ok) {
+            assignmentSelect.innerHTML = `<option value="">${escapeHtml((data && data.error) || 'Error loading assignments')}</option>`;
+            return;
+          }
+          const assignments = Array.isArray(data) ? data : [];
+          assignmentSelect.innerHTML = '<option value="">-- Select an assignment --</option>';
+          assignments.forEach((a) => {
+            const option = document.createElement('option');
+            option.value = a.id;
+            const dueStr = a.due_at ? new Date(a.due_at).toLocaleDateString() : '';
+            option.textContent = dueStr ? `${a.name} (due ${dueStr})` : a.name;
+            assignmentSelect.appendChild(option);
+          });
+          assignmentSelect.disabled = false;
+        } catch (error) {
+          console.error('Error loading assignments:', error);
+          assignmentSelect.innerHTML = '<option value="">Error loading assignments</option>';
+          assignmentSelect.disabled = false;
+        }
+      }
+
+      async function loadOneAssignmentSubmissions(courseId, assignmentId) {
+        const content = document.getElementById('content');
+        const statsBar = document.getElementById('statsBar');
+        if (!courseId || !assignmentId) {
+          if (content) content.innerHTML = '<div class="empty-state"><h2>Select an assignment</h2><p>Choose an assignment to view submissions and comments.</p></div>';
+          if (statsBar) statsBar.style.display = 'none';
+          return;
+        }
+
+        content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading submissions and comments...</p></div>';
+        if (statsBar) statsBar.style.display = 'none';
+
+        try {
+          const response = await fetchWithTimeout(
+            `/api/courses/${courseId}/assignments/${assignmentId}/submissions`,
+            { credentials: 'include' },
+            60000
+          );
+          let data;
+          try {
+            data = await response.json();
+          } catch (e) {
+            content.innerHTML = '<div class="error"><strong>Error:</strong> Server returned invalid response.</div>';
+            return;
+          }
+          if (!response.ok) {
+            const msg = (data && data.error) ? data.error : 'Failed to load submissions';
+            content.innerHTML = `<div class="error"><strong>Error:</strong> ${escapeHtml(msg)}</div>`;
+            return;
+          }
+          lastAssignmentsData = [data];
+          renderContent(lastAssignmentsData);
+        } catch (error) {
+          console.error('Error loading submissions:', error);
+          const isTimeout = error.name === 'AbortError';
+          content.innerHTML = '<div class="error"><strong>Error:</strong> ' + (isTimeout ? 'Request timed out. Try again.' : 'Could not load submissions. Try again.') + '</div>';
+        }
+      }
+
+      function escapeHtml(text) {
+        if (text == null) return '';
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+      }
+
+      document.getElementById('courseSelect').addEventListener('change', (e) => {
+        loadAssignments(e.target.value);
+      });
+
+      document.getElementById('assignmentSelect').addEventListener('change', (e) => {
+        const courseId = document.getElementById('courseSelect').value;
+        loadOneAssignmentSubmissions(courseId, e.target.value);
+      });
+
+      document.getElementById('viewToggle').addEventListener('change', () => {
+        if (lastAssignmentsData.length) renderContent(lastAssignmentsData);
+      });
+
+      (async function init() {
+        await checkAuth();
+        loadCourses();
+      })();
+    </script>
+  </body>
+</html>

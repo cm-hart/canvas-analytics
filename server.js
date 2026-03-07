@@ -43,6 +43,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Serve submissions page (requires auth)
+app.get('/submissions', (req, res) => {
+  if (!req.session.authenticated) {
+    return res.redirect('/login.html');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'submissions.html'));
+});
+
 // Serve static files for authenticated users
 app.use(express.static('public'));
 
@@ -121,13 +129,30 @@ app.get('/api/auth/status', (req, res) => {
 const CANVAS_BASE_URL = process.env.CANVAS_BASE_URL;
 const CANVAS_API_TOKEN = process.env.CANVAS_API_TOKEN;
 
+function isCanvasConfigured() {
+  const url = CANVAS_BASE_URL && String(CANVAS_BASE_URL).trim();
+  const token = CANVAS_API_TOKEN && String(CANVAS_API_TOKEN).trim();
+  if (!url || !token) return { ok: false, message: 'Canvas not configured. Set CANVAS_BASE_URL and CANVAS_API_TOKEN in .env' };
+  try {
+    new URL(url);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: 'Invalid CANVAS_BASE_URL in .env' };
+  }
+}
+
 // Axios instance for Canvas API
 const canvasAPI = axios.create({
-  baseURL: `${CANVAS_BASE_URL}/api/v1`,
+  baseURL: `${CANVAS_BASE_URL || ''}/api/v1`,
   headers: {
-    'Authorization': `Bearer ${CANVAS_API_TOKEN}`
+    'Authorization': `Bearer ${CANVAS_API_TOKEN || ''}`
   }
 });
+
+// Delay helper to avoid Canvas API rate limits (429)
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // Helper function to get all pages of results (Canvas uses pagination)
 async function getAllPages(url, params = {}) {
@@ -137,15 +162,15 @@ async function getAllPages(url, params = {}) {
   while (nextUrl) {
     const response = await canvasAPI.get(nextUrl, { params });
     allResults = allResults.concat(response.data);
-    
+
     // Check for pagination link in headers
     const linkHeader = response.headers.link;
     if (linkHeader) {
       const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
       if (nextMatch) {
-        // Extract just the path from the full URL
         nextUrl = nextMatch[1].replace(CANVAS_BASE_URL + '/api/v1', '');
-        params = {}; // Params are already in the URL
+        params = {};
+        await delay(200); // Brief pause between pages to reduce rate-limit pressure
       } else {
         nextUrl = null;
       }
@@ -159,6 +184,10 @@ async function getAllPages(url, params = {}) {
 
 // Get all courses for the instructor
 app.get('/api/courses', requireAuth, async (req, res) => {
+  const configCheck = isCanvasConfigured();
+  if (!configCheck.ok) {
+    return res.status(503).json({ error: configCheck.message });
+  }
   try {
     const courses = await getAllPages('/courses', {
       enrollment_type: 'teacher',
@@ -179,16 +208,111 @@ app.get('/api/courses', requireAuth, async (req, res) => {
     
     res.json(formattedCourses);
   } catch (error) {
+    const msg = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message || 'Failed to fetch courses';
     console.error('Error fetching courses:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch courses' });
+    res.status(error.response?.status === 401 ? 401 : 500).json({ error: msg });
+  }
+});
+
+// Get assignments for a course (list only, no submissions)
+app.get('/api/courses/:courseId/assignments', requireAuth, async (req, res) => {
+  const configCheck = isCanvasConfigured();
+  if (!configCheck.ok) {
+    return res.status(503).json({ error: configCheck.message });
+  }
+  try {
+    const { courseId } = req.params;
+    const assignments = await getAllPages(`/courses/${courseId}/assignments`, {
+      per_page: 100
+    });
+    const submitAssignments = assignments.filter(
+      (a) =>
+        a.submission_types &&
+        !a.submission_types.includes('none') &&
+        !a.submission_types.includes('not_graded') &&
+        !a.submission_types.includes('on_paper')
+    );
+    res.json(submitAssignments.map((a) => ({
+      id: a.id,
+      name: a.name,
+      due_at: a.due_at,
+      submission_types: a.submission_types
+    })));
+  } catch (error) {
+    const msg = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message || 'Failed to fetch assignments';
+    console.error('Error fetching assignments:', error.response?.data || error.message);
+    res.status(error.response?.status === 429 ? 429 : 500).json({ error: msg });
+  }
+});
+
+// Get submissions and comments for one assignment only
+app.get('/api/courses/:courseId/assignments/:assignmentId/submissions', requireAuth, async (req, res) => {
+  const configCheck = isCanvasConfigured();
+  if (!configCheck.ok) {
+    return res.status(503).json({ error: configCheck.message });
+  }
+  try {
+    const { courseId, assignmentId } = req.params;
+    const assignments = await getAllPages(`/courses/${courseId}/assignments`, { per_page: 100 });
+    const assignment = assignments.find((a) => String(a.id) === String(assignmentId));
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+    const submissions = await getAllPages(
+      `/courses/${courseId}/assignments/${assignmentId}/submissions`,
+      {
+        include: ['submission_comments', 'user'],
+        per_page: 100
+      }
+    );
+    res.json({
+      id: assignment.id,
+      name: assignment.name,
+      due_at: assignment.due_at,
+      submission_types: assignment.submission_types,
+      submissions: submissions.map((s) => ({
+        id: s.id,
+        user_id: s.user_id,
+        user_name: (s.user && (s.user.display_name || s.user.sortable_name)) || `User ${s.user_id}`,
+        submitted_at: s.submitted_at,
+        grade: s.grade,
+        score: s.score,
+        workflow_state: s.workflow_state,
+        body: s.body ?? null,
+        url: s.url ?? null,
+        submission_type: s.submission_type ?? null,
+        attachments: (s.attachments || []).map((a) => ({
+          id: a.id,
+          display_name: a.display_name,
+          url: a.url,
+          filename: a.filename
+        })),
+        submission_comments: (s.submission_comments || []).map((c) => ({
+          id: c.id,
+          author_id: c.author_id,
+          author_name: c.author_name,
+          comment: c.comment,
+          created_at: c.created_at,
+          edited_at: c.edited_at
+        }))
+      }))
+    });
+  } catch (error) {
+    const msg = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || error.message || 'Failed to fetch submissions';
+    console.error('Error fetching assignment submissions:', error.response?.data || error.message);
+    res.status(error.response?.status === 429 ? 429 : 500).json({ error: msg });
   }
 });
 
 // Get all students in a course with their analytics
 app.get('/api/courses/:courseId/analytics', requireAuth, async (req, res) => {
+  const configCheck = isCanvasConfigured();
+  if (!configCheck.ok) {
+    return res.status(503).json({ error: configCheck.message });
+  }
   try {
     const { courseId } = req.params;
-    
+
     // Get all students in the course
     const students = await getAllPages(`/courses/${courseId}/users`, {
       enrollment_type: ['student'],
